@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sentence_transformers import SentenceTransformer
 from dotenv import load_dotenv
 from supabase import create_client
 from langchain_groq import ChatGroq
@@ -28,6 +29,33 @@ llm = ChatGroq(
     model="llama-3.3-70b-versatile"
 )
 
+# Load embedding model
+model = SentenceTransformer("all-MiniLM-L6-v2")
+
+class DocumentRequest(BaseModel):
+    title: str
+    content: str
+
 @app.get("/")
 def read_root():
     return {"message": "Semantic Search API is running!"}
+
+@app.post("/documents")
+def add_document(request: DocumentRequest):
+
+    # Step 1: Convert content to embeddings
+    embedding = model.encode(request.content).tolist()
+
+    # Step 2: Save to Supabase
+    supabase.schema("project3").table("documents").insert({
+        "title": request.title,
+        "content": request.content,
+        "embedding": embedding
+    }).execute()
+
+    # Step 3: Return Success
+    return {
+        "message": "Document Uploaded"
+    }
+
+@app.post("/search")
