@@ -67,7 +67,10 @@ def search_documents(request: SearchRequest):
         "match_count": 5
     }).execute()
 
+    # Only show similarites above 0.3
+    filtered = [r for r in results.data if r ["similarity"] > 0.3]
+
     # Step 3: return
     return {
-        "results": results.data
+        "results": filtered
     }
