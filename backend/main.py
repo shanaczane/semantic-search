@@ -3,7 +3,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from sentence_transformers import SentenceTransformer
 from dotenv import load_dotenv
 from supabase import create_client
-from langchain_groq import ChatGroq
 from pydantic import BaseModel
 import os
 
@@ -24,10 +23,6 @@ supabase = create_client(
     os.getenv("SUPABASE_KEY")
 )
 
-llm = ChatGroq(
-    api_key=os.getenv("GROQ_API_KEY"),
-    model="llama-3.3-70b-versatile"
-)
 
 # Load embedding model
 model = SentenceTransformer("all-MiniLM-L6-v2")
@@ -35,6 +30,8 @@ model = SentenceTransformer("all-MiniLM-L6-v2")
 class DocumentRequest(BaseModel):
     title: str
     content: str
+class SearchRequest(BaseModel):
+    query: str
 
 @app.get("/")
 def read_root():
@@ -59,3 +56,18 @@ def add_document(request: DocumentRequest):
     }
 
 @app.post("/search")
+def search_documents(request: SearchRequest):
+    
+    # Step 1: Convert query to embeddings
+    embeddings = model.encode(request.query).tolist()
+
+    # Step 2: Search Supabase
+    results = supabase.schema("project3").rpc("match_documents", {
+        "query_embedding": embeddings,
+        "match_count": 5
+    }).execute()
+
+    # Step 3: return
+    return {
+        "results": results.data
+    }
