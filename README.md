@@ -7,7 +7,7 @@ results ranked by similarity score even if the exact
 words don't match.
 
 ## Demo
-![Semantic Search Screenshot](screenshots/image.png)
+![Semantic Search Screenshot](demo/demo.gif)
 
 ## How it works
 1. User adds a document with a title and content
